@@ -1,6 +1,10 @@
+pyproject.toml
 setup.py
+stardew_fisher/__init__.py
 stardew_fisher.egg-info/PKG-INFO
 stardew_fisher.egg-info/SOURCES.txt
 stardew_fisher.egg-info/dependency_links.txt
 stardew_fisher.egg-info/requires.txt
 stardew_fisher.egg-info/top_level.txt
+stardew_fisher/envs/__init__.py
+stardew_fisher/envs/stardew_fisher_env.py
