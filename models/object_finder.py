@@ -1,5 +1,4 @@
 import cv2
-import pdb
 import math
 import time
 from pathlib import Path
@@ -13,6 +12,15 @@ class object_finder:
         self.image_data_dir = self.base_dir / 'image_data'
 
         self.model_save_path = self._resolve_model_path(save_model_path, for_save=True)
+        if self.model_save_path is not None:
+            if self.model_save_path.exists() and self.model_save_path.is_dir():
+                raise IsADirectoryError(
+                    f"Model save path points to a directory, expected a file path: {self.model_save_path}"
+                )
+            if not self.model_save_path.parent.exists():
+                raise FileNotFoundError(
+                    f"Model save directory does not exist: {self.model_save_path.parent}"
+                )
 
         if train:
             if new_data:
@@ -22,7 +30,11 @@ class object_finder:
             
         self.model = None
         model_load_path = self._resolve_model_path(load_model_path)
-        if model_load_path is not None and model_load_path.is_file():
+        if model_load_path is not None and not model_load_path.is_file():
+            raise FileNotFoundError(
+                f"Could not find model file to load at: {model_load_path}"
+            )
+        if model_load_path is not None:
             self.model = models.load_model(model_load_path, compile=False)
         
         self.fish_block_size = 27
