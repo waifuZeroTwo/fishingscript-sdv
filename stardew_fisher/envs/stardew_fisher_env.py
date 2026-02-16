@@ -25,7 +25,7 @@ actions = {
 }
 
 class StardewFisherEnv(gym.Env):
-    def __init__(self):
+    def __init__(self, model_load_path=None, screen_dims_path=None):
         self.mouse = Controller()
         #Can be anywhere from fish at top, bar at bottom, to vice versa.
         self.top = 20
@@ -47,14 +47,16 @@ class StardewFisherEnv(gym.Env):
 
         #cv2/obj locater vars
         self.show_screen = True
-        self.finder = object_finder.object_finder(load_model_path=MODELS_DIR / 'batch100_fish_id.h5')
+        model_path = Path(model_load_path) if model_load_path is not None else (MODELS_DIR / 'batch100_fish_id.h5')
+        self.finder = object_finder.object_finder(load_model_path=model_path)
         self.fish_start_col = 3
         self.fish_end_col = 38
         self.bar_start_col = 1
         self.bar_end_col = 40
         self.bar_height = 158
         self.catch_range = self.bar_height / 2            
-        self.screen_dims = np.load(MODELS_DIR / 'numpy_data' / 'screen_dims.npy').tolist()
+        resolved_screen_dims_path = Path(screen_dims_path) if screen_dims_path is not None else (MODELS_DIR / 'numpy_data' / 'screen_dims.npy')
+        self.screen_dims = np.load(resolved_screen_dims_path).tolist()
         #(800, 305, 840, 855)
         self.last_screen = None
         self.moving = 0
