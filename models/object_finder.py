@@ -50,7 +50,17 @@ class object_finder:
 
         model_path = Path(model_path)
         if not model_path.is_absolute():
-            model_path = self.base_dir / model_path
+            # Support paths provided relative to either the repo root (e.g. models/foo.h5)
+            # or the models directory itself (e.g. foo.h5).
+            candidate_paths = [
+                self.base_dir / model_path,
+                self.base_dir.parent / model_path,
+            ]
+
+            if for_save:
+                model_path = candidate_paths[0]
+            else:
+                model_path = next((path for path in candidate_paths if path.exists()), candidate_paths[0])
 
         if model_path.suffix in ('.keras', '.h5'):
             return model_path
