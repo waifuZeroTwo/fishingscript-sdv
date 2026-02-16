@@ -107,10 +107,12 @@ class object_finder:
         X, y, predictions, rows = self.init_fish_data()
         X, y, predictions = self.reshape_data(X, y, predictions, rows, flag=flag, block_size=27)
         
-        new_model = models.Sequential()
+        new_model = models.Sequential([
+            layers.Input(shape=(X.shape[1],)),
+            layers.Dense(600, activation='sigmoid'),
+            layers.Dense(1, activation='sigmoid'),
+        ])
         sgd = optimizers.SGD(learning_rate=0.01, momentum=0.9, nesterov=False)
-        new_model.add(layers.Dense(600, input_shape=(X.shape[1],), activation='sigmoid'))
-        new_model.add(layers.Dense(1, activation='sigmoid'))
         new_model.compile(
             optimizer=sgd,
             loss='mean_squared_error',
