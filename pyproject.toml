@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stardew-fisher"
+version = "0.0.1"
+description = "Gymnasium environment and automation helpers for Stardew Valley fishing"
+requires-python = ">=3.10,<3.12"
+dependencies = [
+  "gymnasium>=0.29,<1.1",
+  "opencv-python>=4.8,<5",
+  "pynput>=1.7.6,<2",
+  "Pillow>=10,<12",
+  "numpy>=1.24,<2",
+]
+
+[project.optional-dependencies]
+runtime = []
+training = [
+  "tensorflow>=2.15,<2.17",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["stardew_fisher*"]

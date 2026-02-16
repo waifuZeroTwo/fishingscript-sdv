@@ -1,4 +1,10 @@
-pynput
-gym
-keras
-tensorflow==1.15.2
+gymnasium<1.1,>=0.29
+opencv-python<5,>=4.8
+pynput<2,>=1.7.6
+Pillow<12,>=10
+numpy<2,>=1.24
+
+[runtime]
+
+[training]
+tensorflow<2.17,>=2.15

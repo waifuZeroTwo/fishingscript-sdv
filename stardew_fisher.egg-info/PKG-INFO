@@ -1,10 +1,13 @@
-Metadata-Version: 1.0
+Metadata-Version: 2.4
 Name: stardew-fisher
 Version: 0.0.1
-Summary: UNKNOWN
-Home-page: UNKNOWN
-Author: UNKNOWN
-Author-email: UNKNOWN
-License: UNKNOWN
-Description: UNKNOWN
-Platform: UNKNOWN
+Summary: Gymnasium environment and automation helpers for Stardew Valley fishing
+Requires-Python: <3.12,>=3.10
+Requires-Dist: gymnasium<1.1,>=0.29
+Requires-Dist: opencv-python<5,>=4.8
+Requires-Dist: pynput<2,>=1.7.6
+Requires-Dist: Pillow<12,>=10
+Requires-Dist: numpy<2,>=1.24
+Provides-Extra: runtime
+Provides-Extra: training
+Requires-Dist: tensorflow<2.17,>=2.15; extra == "training"
