@@ -5,12 +5,12 @@ import time
 import os.path
 import numpy as np
 from os import path
-from keras import optimizers
-from keras.models import Sequential, load_model
-from keras.layers import Dense
+from tensorflow.keras import layers, models, optimizers
 
 class object_finder:
     def __init__(self, load_model_path=None, save_model_path=None, new_data=False, train=False):
+        self.model_save_path = self._resolve_model_path(save_model_path, for_save=True)
+
         if train:
             if new_data:
                 self.new_labels()
@@ -18,14 +18,37 @@ class object_finder:
             self.train_fish()
             
         self.model = None
-        if load_model_path is not None and os.path.isfile(load_model_path):
-            self.model = load_model(load_model_path, compile=False)
+        model_load_path = self._resolve_model_path(load_model_path)
+        if model_load_path is not None and os.path.isfile(model_load_path):
+            self.model = models.load_model(model_load_path, compile=False)
         
         self.fish_block_size = 27
         self.bar_block_size = 158
         self.bar_max_top = 385
         self.bar_offset = 5
         self.last_bar_data = None
+
+
+    def _resolve_model_path(self, model_path, for_save=False):
+        if model_path is None:
+            return None
+
+        _, ext = os.path.splitext(model_path)
+        if ext in ('.keras', '.h5'):
+            return model_path
+
+        if for_save:
+            return model_path + '.keras'
+
+        keras_path = model_path + '.keras'
+        if os.path.isfile(keras_path):
+            return keras_path
+
+        h5_path = model_path + '.h5'
+        if os.path.isfile(h5_path):
+            return h5_path
+
+        return model_path
         
     def new_labels(self):
         fish_data_path = 'data\\fish_labels.txt'
@@ -51,11 +74,15 @@ class object_finder:
         X, y, predictions, rows = self.init_fish_data()
         X, y, predictions = self.reshape_data(X, y, predictions, rows, flag=flag, block_size=27)
         
-        new_model = Sequential()
-        sgd = optimizers.SGD(lr=0.01, decay=0.0001, momentum=0.9, nesterov=False)
-        new_model.add(Dense(600, input_shape=(X.shape[1],), activation='sigmoid'))
-        new_model.add(Dense(1, activation='sigmoid'))
-        new_model.compile(loss='mean_squared_error', optimizer='Adadelta', metrics=['accuracy'])
+        new_model = models.Sequential()
+        sgd = optimizers.SGD(learning_rate=0.01, momentum=0.9, nesterov=False)
+        new_model.add(layers.Dense(600, input_shape=(X.shape[1],), activation='sigmoid'))
+        new_model.add(layers.Dense(1, activation='sigmoid'))
+        new_model.compile(
+            optimizer=sgd,
+            loss='mean_squared_error',
+            metrics=['accuracy']
+        )
         new_model.fit(X, y, epochs=1, batch_size=1, verbose=0)
         if self.model_save_path is not None:
             new_model.save(self.model_save_path)
