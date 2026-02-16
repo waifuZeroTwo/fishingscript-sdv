@@ -2,13 +2,12 @@
 import sys
 import cv2
 import pdb
-import gym
+import gymnasium as gym
 import time
 import atexit
 import stardew_fisher
 import numpy as np
 from PIL import ImageGrab
-from gym import error, spaces
 from pynput.mouse import Button, Controller
 
 #Necessary to find models
@@ -93,17 +92,18 @@ def train():
         time.sleep(0.2)
         if actual_fish:
             # Reset environment
-            diff = env.reset()
+            diff, _ = env.reset()
             diff += 515
-            done = False
+            terminated = False
+            truncated = False
             j = 0
             
-            while j < 300: #give 2000 frames to catch a fish
+            while not (terminated or truncated):
                 j+=1
                 # Choose action from Q table. Less random in later iterations
                 act = np.argmax(Q[diff] + np.random.randn(1,env.action_space.n)*(1./(i+1)))
                 #Step with current action
-                diff1,rew,done,_ = env.step(act)
+                diff1, rew, terminated, truncated, _ = env.step(act)
                 diff1 += 515
                 print(j, rew, act, diff1)
                 #Update current obs,state in Q table.
@@ -111,9 +111,8 @@ def train():
                 Q[diff][act] = Q[diff][act] + eta*(rew + gma*np.max(Q[diff1]) - Q[diff][act])
                 diff = diff1
                 #print('Done!')
-                if done:
+                if terminated:
                     env.second = True
-                    break
 
 def exit_func():
     pdb.set_trace()
@@ -125,4 +124,3 @@ train()
 #env._update_time()
 train()
 atexit.register(exit_func)
-

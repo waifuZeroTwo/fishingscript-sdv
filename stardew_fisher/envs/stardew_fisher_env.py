@@ -4,10 +4,8 @@ import sys
 import pdb
 import time
 import numpy as np
-import gym
-from gym import error, spaces
-from gym.utils import seeding
-from gym.envs.toy_text import discrete
+import gymnasium as gym
+from gymnasium import spaces
 from pynput.mouse import Button, Controller
 from PIL import ImageGrab
 
@@ -59,9 +57,12 @@ class StardewFisherEnv(gym.Env):
         self.moving = 0
 
         self.second = False
+        self.max_steps = 300
+        self.current_step = 0
 
         
     def step(self, action):
+        self.current_step += 1
         assert self.action_space.contains(action)
         #Do action
         if action == 0:
@@ -84,25 +85,28 @@ class StardewFisherEnv(gym.Env):
         
         if temp < 0.1 or self.bar_location == (0, 0): #fish caught
             print('Temp is {}'.format(temp))
-            done = True
+            terminated = True
             if self.elapsed_time < 0.3:
                 self.catching = False
         else: #fish is somewhere
-            done = False
+            terminated = False
             self._update_time()
 
         obs = self._get_obs()
         if self.bar_location == (0, 0):
-            done = True
+            terminated = True
             if self.elapsed_time < 0.3:
                 self.catching = False
+
+        truncated = self.current_step >= self.max_steps and not terminated
 
         #Get reward for not being done
         reward = self._get_reward()
             
-        return obs, reward, done, {}
+        return obs, reward, terminated, truncated, {}
 
-    def reset(self):
+    def reset(self, *, seed=None, options=None):
+        super().reset(seed=seed)
         self.catching = True
         self.start_time = time.time()
         self.elapsed_time = 0
@@ -111,7 +115,9 @@ class StardewFisherEnv(gym.Env):
         self.finder.last_bar_data = (385,543)
         self.last_screen = None
         self.moving = 0
-        return self._get_difference() + (self.observation_space.n - 1) * self.moving
+        self.current_step = 0
+        obs = self._get_difference() + (self.observation_space.n - 1) * self.moving
+        return obs, {}
 
     def _get_obs(self):
         #capture the window (wrote script to resize window)
