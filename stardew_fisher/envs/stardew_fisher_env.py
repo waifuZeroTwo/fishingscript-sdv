@@ -30,7 +30,9 @@ class StardewFisherEnv(gym.Env):
         #Can be anywhere from fish at top, bar at bottom, to vice versa.
         self.top = 20
         self.bottom = 515
-        self.observation_space = spaces.Discrete((self.bottom*2)+1)
+        self.base_observation_size = (self.bottom * 2) + 1
+        self.observation_space = spaces.Discrete(self.base_observation_size * 2)
+        self.observation_offset = self.bottom
         self.action_space = spaces.Discrete(len(actions))
 
         #Variables related to location and determining if fish being caught
@@ -121,7 +123,7 @@ class StardewFisherEnv(gym.Env):
         self.last_screen = None
         self.moving = 0
         self.current_step = 0
-        obs = self._get_difference() + (self.observation_space.n - 1) * self.moving
+        obs = self._encode_observation()
         return obs, {}
 
     def _get_obs(self):
@@ -145,8 +147,18 @@ class StardewFisherEnv(gym.Env):
             cv2.imshow('', screen)
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 cv2.destroyAllWindows()
-        #Return roughly middle of bar
-        return self._get_difference() + (self.observation_space.n - 1) * self.moving
+        #Return encoded state index in observation space
+        return self._encode_observation()
+
+    def _encode_observation(self):
+        diff = self._get_difference()
+        clipped_diff = int(np.clip(diff, -self.observation_offset, self.observation_offset))
+        encoded = clipped_diff + self.observation_offset
+
+        if self.moving:
+            encoded += self.base_observation_size
+
+        return encoded
 
     def _update_time(self):
        # pdb.set_trace()
