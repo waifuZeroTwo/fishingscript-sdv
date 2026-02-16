@@ -51,8 +51,7 @@ def train(args):
     )
     mouse = Controller()
 
-    q_table = np.zeros([env.observation_space.n * 2, env.action_space.n])
-    observation_offset = env.observation_space.n - 1
+    q_table = np.zeros([env.observation_space.n, env.action_space.n])
 
     caught_something_space = (960, 480, 980, 550)
     bar_space = (800, 305, 840, 855)
@@ -111,7 +110,6 @@ def train(args):
             continue
 
         diff, _ = env.reset()
-        diff += observation_offset
         terminated = False
         truncated = False
         step_idx = 0
@@ -121,7 +119,6 @@ def train(args):
             exploration_noise = np.random.randn(1, env.action_space.n) * (1.0 / (step_idx + 1))
             act = np.argmax(q_table[diff] + exploration_noise)
             diff1, rew, terminated, truncated, _ = env.step(act)
-            diff1 += observation_offset
 
             logger.info('step=%s reward=%s action=%s next_state=%s', step_idx, rew, act, diff1)
             q_table[diff][act] = q_table[diff][act] + args.eta * (
