@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import sys
 import cv2
 import pdb
 import gymnasium as gym
@@ -9,9 +8,6 @@ import stardew_fisher
 import numpy as np
 from PIL import ImageGrab
 from pynput.mouse import Button, Controller
-
-#Necessary to find models
-sys.path.insert(1, 'models\\')
     
 eta = .628  #learning rate
 gma = .9    #value placed on future rewards

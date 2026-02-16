@@ -1,17 +1,20 @@
 import os
 import cv2
-import sys
 import pdb
 import time
+from pathlib import Path
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 from pynput.mouse import Button, Controller
 from PIL import ImageGrab
 
-if __name__ == '__main__':
-    sys.path.insert(1, '..\\..\\models')
-import object_finder
+from models import object_finder
+
+
+MODULE_DIR = Path(__file__).resolve().parent
+REPO_ROOT = MODULE_DIR.parent.parent
+MODELS_DIR = REPO_ROOT / 'models'
 
 
 #Action space
@@ -44,14 +47,14 @@ class StardewFisherEnv(gym.Env):
 
         #cv2/obj locater vars
         self.show_screen = True
-        self.finder = object_finder.object_finder(load_model_path='models\\batch100_fish_id.h5')
+        self.finder = object_finder.object_finder(load_model_path=MODELS_DIR / 'batch100_fish_id.h5')
         self.fish_start_col = 3
         self.fish_end_col = 38
         self.bar_start_col = 1
         self.bar_end_col = 40
         self.bar_height = 158
         self.catch_range = self.bar_height / 2            
-        self.screen_dims = np.load('models\\numpy_data\\screen_dims.npy').tolist()
+        self.screen_dims = np.load(MODELS_DIR / 'numpy_data' / 'screen_dims.npy').tolist()
         #(800, 305, 840, 855)
         self.last_screen = None
         self.moving = 0
