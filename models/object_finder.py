@@ -2,13 +2,16 @@ import cv2
 import pdb
 import math
 import time
-import os.path
+from pathlib import Path
 import numpy as np
-from os import path
 from tensorflow.keras import layers, models, optimizers
 
 class object_finder:
     def __init__(self, load_model_path=None, save_model_path=None, new_data=False, train=False):
+        self.base_dir = Path(__file__).resolve().parent
+        self.numpy_data_dir = self.base_dir / 'numpy_data'
+        self.image_data_dir = self.base_dir / 'image_data'
+
         self.model_save_path = self._resolve_model_path(save_model_path, for_save=True)
 
         if train:
@@ -19,7 +22,7 @@ class object_finder:
             
         self.model = None
         model_load_path = self._resolve_model_path(load_model_path)
-        if model_load_path is not None and os.path.isfile(model_load_path):
+        if model_load_path is not None and model_load_path.is_file():
             self.model = models.load_model(model_load_path, compile=False)
         
         self.fish_block_size = 27
@@ -33,37 +36,41 @@ class object_finder:
         if model_path is None:
             return None
 
-        _, ext = os.path.splitext(model_path)
-        if ext in ('.keras', '.h5'):
+        model_path = Path(model_path)
+        if not model_path.is_absolute():
+            model_path = self.base_dir / model_path
+
+        if model_path.suffix in ('.keras', '.h5'):
             return model_path
 
         if for_save:
-            return model_path + '.keras'
+            return model_path.with_suffix('.keras')
 
-        keras_path = model_path + '.keras'
-        if os.path.isfile(keras_path):
+        keras_path = model_path.with_suffix('.keras')
+        if keras_path.is_file():
             return keras_path
 
-        h5_path = model_path + '.h5'
-        if os.path.isfile(h5_path):
+        h5_path = model_path.with_suffix('.h5')
+        if h5_path.is_file():
             return h5_path
 
         return model_path
         
     def new_labels(self):
-        fish_data_path = 'data\\fish_labels.txt'
-        fish_labels_path = 'numpy_data\\fish_labels.npy'
-        label_data = [list(map(int, line.rstrip('\n').split(',')[1:])) for line in open(fish_data_path, 'r')]
+        fish_data_path = self.image_data_dir / 'fish_labels.txt'
+        fish_labels_path = self.numpy_data_dir / 'fish_labels.npy'
+        with fish_data_path.open('r') as labels_file:
+            label_data = [list(map(int, line.rstrip('\n').split(',')[1:])) for line in labels_file]
         label_data = np.array(label_data)
         np.save(fish_labels_path, label_data)
 
         
     def init_fish_data(self):
-        train_image_path = 'numpy_data\\train_imgs.npy'
-        fish_labels_path = 'numpy_data\\fish_labels.npy'
+        train_image_path = self.numpy_data_dir / 'train_imgs.npy'
+        fish_labels_path = self.numpy_data_dir / 'fish_labels.npy'
         train_data = np.load(train_image_path)
-        labels_data = np.load(fish_labels_path)        
-        predictions = np.array([cv2.imread('data\\171.jpg')])
+        labels_data = np.load(fish_labels_path)
+        predictions = np.array([cv2.imread(str(self.image_data_dir / '171.jpg'))])
         rows = train_data.shape[1]
         
         return train_data[:labels_data.shape[0]], labels_data, predictions, rows
@@ -240,11 +247,11 @@ class object_finder:
 
 
 if __name__ == '__main__':
-    ol = object_finder(load_model_path='batch100_fish_id.h5')
+    ol = object_finder(load_model_path=Path('batch100_fish_id.h5'))
     train_data, _, _, _ = ol.init_fish_data()
-    #cv2.imwrite('image_data\\edges61.jpg', cv2.Canny(train_data[60], 100, 200))
-    #cv2.imwrite('image_data\\edges62.jpg', cv2.Canny(train_data[61], 100, 200))
-    #cv2.imwrite('image_data\\edges63.jpg', cv2.Canny(train_data[62], 100, 200))
+    #cv2.imwrite('image_data/edges61.jpg', cv2.Canny(train_data[60], 100, 200))
+    #cv2.imwrite('image_data/edges62.jpg', cv2.Canny(train_data[61], 100, 200))
+    #cv2.imwrite('image_data/edges63.jpg', cv2.Canny(train_data[62], 100, 200))
     bottom = 0
     top = 134
     print(ol.locate_fish(train_data[bottom]))
@@ -256,5 +263,5 @@ if __name__ == '__main__':
     #    print(locate_bar(train_data[i]))
     #train_fish()
     #model = load_model('batch100_fish_id.h5', compile=False)
-    #print(locate_fish(cv2.imread('data\\1.jpg')))
+    #print(locate_fish(cv2.imread('data/1.jpg')))
     #train_bar()
