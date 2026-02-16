@@ -1,9 +1,13 @@
 import cv2
 import math
 import time
+import logging
 from pathlib import Path
 import numpy as np
 from tensorflow.keras import layers, models, optimizers
+
+
+logger = logging.getLogger(__name__)
 
 class object_finder:
     def __init__(self, load_model_path=None, save_model_path=None, new_data=False, train=False):
@@ -125,8 +129,54 @@ class object_finder:
             new_x.append(temp.reshape(temp.shape[0] * temp.shape[1]))
 
         screen = np.array(new_x)
-        fish_row = self.model.predict(screen)
-        return np.argmax(fish_row)
+        num_rows = screen.shape[0]
+
+        model_input_shape = getattr(self.model, 'input_shape', None)
+        if isinstance(model_input_shape, list):
+            model_input_shape = model_input_shape[0] if model_input_shape else None
+        if model_input_shape is None and getattr(self.model, 'inputs', None):
+            model_input_shape = self.model.inputs[0].shape
+
+        input_rank = len(model_input_shape) if model_input_shape is not None else screen.ndim
+        if input_rank == 2:
+            model_input = screen
+        elif input_rank == 3:
+            model_input = screen.reshape((1, num_rows, screen.shape[1]))
+        else:
+            raise ValueError(
+                f"Unsupported model input rank {input_rank} for fish locator. "
+                f"Detected model input shape: {model_input_shape}"
+            )
+
+        logger.debug(
+            'locate_fish model input shape=%s adapted_input_shape=%s num_rows=%s',
+            model_input_shape,
+            model_input.shape,
+            num_rows,
+        )
+        fish_row = self.model.predict(model_input)
+        logger.debug('locate_fish raw prediction shape=%s', np.shape(fish_row))
+
+        fish_scores = np.squeeze(fish_row)
+        logger.debug('locate_fish squeezed prediction shape=%s', np.shape(fish_scores))
+
+        if np.ndim(fish_scores) == 0:
+            raise ValueError(
+                f"Model prediction collapsed to scalar after squeeze; raw prediction shape was {np.shape(fish_row)}"
+            )
+
+        if np.ndim(fish_scores) == 1:
+            row_scores = fish_scores
+        else:
+            matching_axes = [axis for axis, size in enumerate(fish_scores.shape) if size == num_rows]
+            if matching_axes:
+                row_axis = matching_axes[0]
+                row_scores = np.moveaxis(fish_scores, row_axis, 0).reshape(num_rows, -1).mean(axis=1)
+            else:
+                row_scores = fish_scores.reshape(-1)
+
+        logger.debug('locate_fish normalized score vector shape=%s', np.shape(row_scores))
+        return int(np.argmax(row_scores))
 
 
     def locate_bar(self, screen):
